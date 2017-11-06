@@ -1,0 +1,191 @@
+<html>
+<head>
+    <title></title>
+    <link rel="stylesheet" href="css/jquery.range.css">
+    <style>
+        .slider-container .back-bar .pointer {
+            cursor: pointer !important;
+        }
+
+        .scroller-track {
+            margin: 0 auto;
+            margin-top: 100px;
+            width: 500px;
+            -webkit-user-select: none;
+            position: relative;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .contain {
+            width: 500px;
+            height: 40px;
+            background-color: #E8E8E8;
+        }
+
+        .track {
+            width: 16px;
+            height: 46px;
+            position: absolute;
+            margin: -3px 0 0 0px;
+            background-color: #4db37f;
+            cursor: pointer;
+        }
+
+        .value {
+            height: 40px;
+            position: absolute;
+            margin: 0;
+            background-color: #4db37f;
+        }
+
+        .scale span {
+            position: absolute;
+            text-align: right;
+            height: 40px;
+            line-height: 40px;
+            color: #808080;
+        }
+
+        .show {
+            width: 45px;
+            height: 30px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            line-height: 30px;
+            position: absolute;
+            opacity: 0.9;
+            margin-top: -38px;
+            margin-left: -15px;            
+        }
+    </style>
+</head>
+<body>
+    <div class="demo" style="margin:100px;">
+        <input type="hidden" class="single-slider" />
+    </div>
+    <div class="demo" style="margin:100px;">
+        <input type="hidden" class="single-slider1" />
+    </div>
+    <div id="dateRange" class="scroller-track">
+        <div class="contain"></div>
+        <div class="scale"></div>
+    </div>    
+    <div id="monthRange" class="scroller-track">
+        <div class="contain"></div>
+        <div class="scale"></div>
+    </div>
+    <script src="js/jquery-1.10.2.js"></script>
+    <script src="js/jquery.range.js"></script>
+    <script type="text/javascript">
+
+        $(function () {
+            ScrollerTrack.Init({
+                control: "monthRange",
+                from: 0,
+                to: 12,
+                scale: [0, 3, 6, 9, 12]
+            });
+            ScrollerTrack.Init({
+                control:"dateRange",
+                from: 0,
+                to:30,
+                scale:[0,5,10,15,20,25,30]
+            });
+
+            
+            $('.single-slider').jRange({
+                from: 0,
+                to: 30,
+                step: 1,
+                scale: [0, 5, 10, 15, 20, 25, 30],
+                format: '%s',
+                width: 300,
+                showLabels: true,
+                showScale: true
+            });
+            $('.single-slider1').jRange({
+                from: 0,
+                to: 12,
+                step: 1,
+                scale: [0, 3,6,9,12],
+                format: '%s',
+                width: 300,
+                showLabels: true,
+                showScale: true
+            });
+        });
+        var ScrollerTrack = {
+            BodyWidth: 500,            
+            CurrentX: 0,
+            CurrentValue: 0,
+            Count: 0,
+            Control:null,
+            Init: function (options) {
+                var MaxValue = options.to;
+                ScrollerTrack.CurrentX = ScrollerTrack.CurrentValue = options.from;
+                var $control =$("#"+ options.control);
+                var count = options.scale.length - 1;
+                var mWidth = ScrollerTrack.BodyWidth;                                
+                $control.find(".contain").css("width", mWidth + "px");
+                var rangeBar = "<div class='show'>0</div><div class='value'></div><div class='track'></div>";                
+                $control.find(".contain").append(rangeBar);
+                ScrollerTrack.Count = count;
+                var itemWidth = mWidth / count;
+                var itemUnit = MaxValue / count;                               
+                for (var i = 0; i <= count; i++) {
+                    var span = $("<span>" + i * itemUnit + "</span>");
+                    $(span).css("margin-left", i * (itemWidth - 1) + "px");                                        
+                    $control.find(".scale").append(span);
+                }
+                ScrollerTrack.Value({$control:$control,MaxValue:MaxValue});
+            },
+            Value: function () {
+                var currentValue;
+                var isMoving = false;
+                var $control = arguments[0].$control,
+                    MaxValue = arguments[0].MaxValue;
+                ScrollerTrack.CurrentX = $control.find(".track").offset().left;
+                $control.find(".track").mousedown(function () {
+                    var target = $(this).parent();
+                    isMoving = true;
+                    $("html,body").mousemove(function (event) {
+                        if (isMoving == false) return;
+                        var changeX = event.clientX - ScrollerTrack.CurrentX;
+                        currentValue = changeX - ScrollerTrack.CurrentX;
+                        if (changeX <= 0) {
+                            $(target).find(".track").css("margin-left", "0px");
+                            $(target).find(".value").css("width", "0px");
+                            $(target).find(".show").css("margin-left", "-15px");
+                            $(target).find(".show").html(0);
+                            ScrollerTrack.CurrentValue = 0;
+                        }
+                        else if (changeX >= ScrollerTrack.BodyWidth - 16) {
+                            $(target).find(".track").css("margin-left", ScrollerTrack.BodyWidth - 16 + "px");
+                            $(target).find(".value").css("width", ScrollerTrack.BodyWidth - 16 + "px");
+                            $(target).find(".show").css("margin-left", ScrollerTrack.BodyWidth - 31 + "px");
+                            $(target).find(".show").html(MaxValue);
+                            ScrollerTrack.CurrentValue = MaxValue;                            
+                        }
+                        else {
+                            $(target).find(".track").css("margin-left", changeX + "px");
+                            $(target).find(".value").css("width", changeX + "px");
+                            $(target).find(".show").css("margin-left", changeX - 15 + "px");
+                            var v = MaxValue * ((changeX + 16) / ScrollerTrack.BodyWidth);                            
+                            $(target).find(".show").html(parseInt(v));
+                            ScrollerTrack.CurrentValue = parseInt(v);
+                        }
+                    });
+                });
+                $("html,body").mouseup(function () {
+                    isMoving = false;
+                });
+            }
+        }
+    </script>
+</body>
+</html>
